@@ -1,0 +1,16 @@
+CHANGELOG.txt
+MANIFEST.in
+README.md
+setup.py
+FaceLib.egg-info/SOURCES.txt
+FaceLib.egg-info/dependency_links.txt
+FaceLib.egg-info/top_level.txt
+pyfacelib.egg-info/PKG-INFO
+pyfacelib.egg-info/SOURCES.txt
+pyfacelib.egg-info/dependency_links.txt
+pyfacelib.egg-info/top_level.txt
+source/face_alignment.py
+source/face_detection.py
+source/face_emotion_recognition.py
+source/face_normalization.py
+source/representation_extraction.py
