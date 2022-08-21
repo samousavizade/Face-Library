@@ -3,20 +3,20 @@ from scipy.spatial.distance import euclidean
 from skimage.transform import rotate
 import math
 
-class FaceAlignment:
+
+class FaceAligner:
 
     def __init__(self, ):
         pass
 
     @staticmethod
-    def apply_rotation_on_images(input_images, angles):
-        rotated_images = [rotate(image, angle) for image, angle  in zip(input_images, angles)]
-        return rotated_images
+    def __apply_rotation_on_image_faces__(image_faces, angles):
+        rotated_image_faces = [rotate(face, angle) for face, angle in zip(image_faces, angles)]
+        return rotated_image_faces
 
     @staticmethod
-    def compute_alignment_rotation_(eyes_coordinates):
-        angles = []
-        directions = []
+    def __compute_alignment_rotation_of_image_faces__(eyes_coordinates):
+        angles, directions = [], []
         for left_eye_coordinate, right_eye_coordinate in eyes_coordinates:
 
             left_eye_x, left_eye_y = left_eye_coordinate
@@ -45,6 +45,10 @@ class FaceAlignment:
 
         return angles, directions
 
+    def __align_image_faces__(self, input_image_faces, input_image_faces_eyes_coordinates):
+        angles, directions = self.__compute_alignment_rotation_of_image_faces__(input_image_faces_eyes_coordinates)
+        rotated_image_faces = self.__apply_rotation_on_image_faces__(input_image_faces, angles)
+        return rotated_image_faces
 
-
-
+    def align_images_faces(self, input_images_faces, input_images_faces_eyes_coordinates):
+        return [self.__align_image_faces__(faces, faces_eyes_coordinates) for faces, faces_eyes_coordinates in zip(input_images_faces, input_images_faces_eyes_coordinates)]

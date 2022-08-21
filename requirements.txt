@@ -1,0 +1,10 @@
+numpy~=1.23.1
+scipy~=1.9.0
+scikit-image~=0.19.3
+torch~=1.12.1+cu113
+torchvision~=0.13.1+cu113
+mediapipe~=0.8.10.1
+pandas~=1.4.3
+opencv-python~=4.6.0.66
+pillow~=9.2.0
+setuptools~=63.4.1

@@ -1,45 +1,65 @@
-from mtcnn import MTCNN
 from retinaface import RetinaFace
+import torch
+from torchvision.utils import save_image
+from facenet_pytorch import MTCNN
+import numpy as np
 
-class FaceDetection:
+
+class FaceDetector:
 
     # first call extract_face
-    def __init__(self, model_name, minimum_confidence):
-
-        self.detected_faces_information = None
-        self.model_name = model_name
+    def __init__(self, minimum_confidence, post_process=False, output_size=250, save_path_prefixes=None):
         self.minimum_confidence = minimum_confidence
+        self.save_path_prefixes = save_path_prefixes
 
-        if model_name == "MTCNN":
-            detector_model = MTCNN()
-            self.detect_faces_function = lambda input_image: detector_model.detect_faces(input_image)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.detector_model = MTCNN(
+            keep_all=True,
+            device=device,
+            post_process=post_process,
+            image_size=output_size,
+            margin=output_size // 10, )
 
-    def extract_faces(self, input_image, return_detections_information=True):
-        self.detect_faces__(input_image)
-        faces = self.get_faces__(input_image, )
-        if return_detections_information:
-            return faces, self.detected_faces_information
+        self.images_faces_bounding_boxes = None
+        self.images_faces_facial_keypoints = None
+        self.images_faces_scores = None
+        self.images_faces = None
 
-        else:
-            return faces
+    def compute(self, input_batch_images):
+        images_faces_bounding_boxes, images_faces_scores, images_faces_facial_keypoints = self.detector_model.detect(input_batch_images, landmarks=True)
 
+        images_faces = self.detector_model.extract(input_batch_images, images_faces_bounding_boxes, self.save_path_prefixes)
+        images_faces = [faces[faces_scores >= self.minimum_confidence] for faces_scores, faces in zip(images_faces_scores, images_faces) if faces_scores[0] is not None]
+        images_faces_bounding_boxes = [faces_bounding_boxes[faces_scores >= self.minimum_confidence] for faces_scores, faces_bounding_boxes in zip(images_faces_scores, images_faces_bounding_boxes) if faces_scores[0] is not None]
+        images_faces_facial_keypoints = [faces_facial_keypoints[faces_scores >= self.minimum_confidence] for faces_scores, faces_facial_keypoints in zip(images_faces_scores, images_faces_facial_keypoints) if faces_scores[0] is not None]
+        images_faces_scores = [faces_scores[faces_scores >= self.minimum_confidence] for faces_scores in images_faces_scores if faces_scores[0] is not None]
 
-    def detect_faces__(self, input_image):
-        detections = self.detect_faces_function(input_image)
-        self.detected_faces_information = list(filter(lambda element: element["confidence"] > self.minimum_confidence, detections))
+        images_faces = [image_faces.permute(0, 2, 3, 1).numpy().astype(np.uint8) for image_faces in images_faces]
+        # images_faces = [image_faces / 255.0 for image_faces in images_faces]
+        images_faces_bounding_boxes = [faces_bounding_boxes.round().astype(np.int16) for faces_bounding_boxes in images_faces_bounding_boxes]
+        images_faces_facial_keypoints = [faces_facial_keypoints.round().astype(np.int16) for faces_facial_keypoints in images_faces_facial_keypoints]
 
-    def get_detected_faces_information(self):
-        return self.detected_faces_information
+        self.images_faces = images_faces
+        self.images_faces_bounding_boxes, self.images_faces_scores, self.images_faces_facial_keypoints = images_faces_bounding_boxes, images_faces_scores, images_faces_facial_keypoints
 
-    def get_keypoints(self, ):
-        return list(map(lambda element: element["keypoints"], self.detected_faces_information))
+        return self
 
-    def get_faces__(self, input_image, ):
-        boxes = [detection_information["box"] for detection_information in self.detected_faces_information]
-        y1y2x1x2 = [(int(y), int(y + h), int(x), int(x + w)) for x, y, w, h in boxes]
-        faces = [input_image[y1:y2, x1:x2] for y1, y2, x1, x2 in y1y2x1x2]
-        return faces
+    def get_bounding_boxes(self, ):
+        return self.images_faces_bounding_boxes
+
+    def get_facial_keypoints(self, ):
+        return self.images_faces_facial_keypoints
+
+    def get_images_faces(self, ):
+        return self.images_faces
+
+    def get_images_faces_scores(self, ):
+        return self.images_faces_scores
 
     def get_eyes_coordinates(self, ):
-        eyes_coordinates = [(info["keypoints"]["left_eye"], info["keypoints"]["right_eye"]) for info in self.detected_faces_information]
-        return eyes_coordinates
+        images_faces_eyes_coordinates = []
+        for facial_keypoints in self.images_faces_facial_keypoints:
+            image_faces_eyes_coordinates = facial_keypoints[:, [0, 1], :]
+            images_faces_eyes_coordinates.append(image_faces_eyes_coordinates)
+
+        return images_faces_eyes_coordinates

@@ -1,15 +1,14 @@
-from face_detection import FaceDetection
-from face_alignment import FaceAlignment
-from face_normalization import FaceNormalizer
-from face_emotion_recognition import FaceEmotionRecognizer
-import numpy as np
+from source.face_detection import FaceDetector
+from source.face_alignment import FaceAligner
+from source.face_normalization import FaceNormalizer
+from source.face_emotion_recognition import FaceEmotionRecognizer
 import pickle
 
 
 class EmotionRepresentationExtractor:
     def __init__(self, ):
-        self.face_detection_model: FaceDetection = None
-        self.face_alignment_model: FaceAlignment = None
+        self.face_detection_model: FaceDetector = None
+        self.face_alignment_model: FaceAligner = None
         self.face_normalizer_model: FaceNormalizer = None
         self.face_emotion_recognition_model: FaceEmotionRecognizer = None
 
@@ -35,23 +34,13 @@ class EmotionRepresentationExtractor:
         self.face_emotion_recognition_model = face_emotion_recognition_model
         return self
 
-    def extract_representation(self, input_image):
-        faces, detected_faces_information = self.face_detection_model.extract_faces(input_image, return_detections_information=True)
-        rotation_angles, rotation_directions = self.face_alignment_model.compute_alignment_rotation_(self.face_detection_model.get_eyes_coordinates())
-        rotated_faces = self.face_alignment_model.apply_rotation_on_images(faces, rotation_angles)
-        normalized_rotated_faces = self.face_normalizer_model.normalize_faces_image(rotated_faces)
+    def extract_representation(self, input_images):
+        images_faces = self.face_detection_model.compute(input_images, ).get_images_faces()
+        aligned_images_faces = self.face_alignment_model.align_images_faces(images_faces, self.face_detection_model.get_eyes_coordinates())
+        normalized_aligned_images_faces = self.face_normalizer_model.normalize_images_faces(aligned_images_faces)
+        representations = self.face_emotion_recognition_model.extract_representations_from_images_faces(normalized_aligned_images_faces)
 
-        normalized_rotated_faces_255 = [(image * 255).astype(np.uint8) for image in normalized_rotated_faces]
-
-        representations = self.face_emotion_recognition_model.extract_representations_from_faces(normalized_rotated_faces_255)
-        predictions, scores = self.face_emotion_recognition_model.predict_emotions_from_representations(representations)
-
-        self.faces = faces
-        self.rotation_angles, self.rotation_directions = rotation_angles, rotation_directions
-        self.rotated_faces = rotated_faces
-        self.normalized_rotated_faces = normalized_rotated_faces_255
-
-        return predictions, scores, representations
+        return representations
 
     def get_rotations_information(self):
         return self.rotation_angles, self.rotation_directions

@@ -57,7 +57,7 @@ class FaceNormalizer:
         return routes
 
     @staticmethod
-    def normalize_with_landmark_points__(input_image, landmarks):
+    def __normalize_with_landmark_points__(input_image, landmarks):
         mask = np.zeros((input_image.shape[0], input_image.shape[1]))
         mask = cv2.fillConvexPoly(mask, np.array(landmarks), 1)
         mask = mask.astype(bool)
@@ -66,6 +66,10 @@ class FaceNormalizer:
         out[mask] = input_image[mask]
         return out
 
-    def normalize_faces_image(self, input_images):
-        normalized_faces_images = [self.normalize_with_landmark_points__(input_image, self.get_landmarks__(input_image)) for input_image in input_images]
-        return normalized_faces_images
+    def __normalize_image_faces__(self, input_image_faces):
+        normalized_image_faces = [self.__normalize_with_landmark_points__(input_image, self.get_landmarks__(input_image)) for input_image in input_image_faces]
+        return normalized_image_faces
+
+    def normalize_images_faces(self, input_images_faces):
+        return [self.__normalize_image_faces__(faces) for faces in input_images_faces]
+

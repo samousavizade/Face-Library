@@ -4,7 +4,7 @@ long_description = "Python high level tools library to use in face detection, al
 
 setup(
     name="pyfacelib",
-    version="0.0.1",
+    version="0.0.2",
     description="Python High Level Face Tools Library",
     long_description=long_description + "\n\n" + open("CHANGELOG.txt").read(),
     keywords=[

@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 import urllib
+import numpy as np
 
 
 def get_model_path(model_name):
@@ -31,6 +32,7 @@ class FaceEmotionRecognizer:
             self.idx_to_class = {0: 'Anger', 1: 'Contempt', 2: 'Disgust', 3: 'Fear', 4: 'Happiness', 5: 'Neutral', 6: 'Sadness', 7: 'Surprise'}
 
         self.img_size = 224 if '_b0_' in model_name else 260
+
         self.test_transforms = transforms.Compose([
             transforms.Resize((self.img_size, self.img_size)),
             transforms.ToTensor(),
@@ -56,12 +58,19 @@ class FaceEmotionRecognizer:
     def compute_probability(self, features):
         return torch.matmul(features, self.classifier_weights.T) + self.classifier_bias
 
-    def extract_representations_from_faces(self, input_faces):
-        faces = [self.test_transforms(Image.fromarray(face)) for face in input_faces]
+    def extract_representations_from_image_faces(self, input_image_faces):
+        # 0-1 scale pixels to 0-255 scale
+        if input_image_faces[0][0].dtype == np.float64:
+            input_image_faces = [(image * 255).astype(np.uint8) for image in input_image_faces]
+
+        faces = [self.test_transforms(Image.fromarray(face)) for face in input_image_faces]
         features = self.model(torch.stack(faces, dim=0).to(self.device))
         return features
 
-    def predict_emotions_from_representations(self, representations, logits=True, return_features=True):
+    def extract_representations_from_images_faces(self, input_images_faces):
+        return [self.extract_representations_from_image_faces(input_image_faces) for input_image_faces in input_images_faces]
+
+    def predict_emotions_from_image_faces_representations(self, representations, logits=True, return_features=True):
         scores = self.compute_probability(representations)
         if self.is_mtl:
             predictions_indices = torch.argmax(scores[:, :-2], dim=1)
