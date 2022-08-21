@@ -1,7 +1,7 @@
-from source.face_detection import FaceDetector
-from source.face_alignment import FaceAligner
-from source.face_normalization import FaceNormalizer
-from source.face_emotion_recognition import FaceEmotionRecognizer
+from PyFaceLib.face_detection import FaceDetector
+from PyFaceLib.face_alignment import FaceAligner
+from PyFaceLib.face_normalization import FaceNormalizer
+from PyFaceLib.face_emotion_recognition import FaceEmotionRecognizer
 import pickle
 
 
